@@ -1,0 +1,73 @@
+(function() {
+    var myConnector = tableau.makeConnector();
+    
+    myConnector.getSchema = function(schemaCallback) {
+        var cols = [{
+            id: "Brand",
+            alias: "Car Brand",
+            dataType: tableau.dataTypeEnum.string
+        }, {
+            id: "Year",
+            alias: "Car Year",
+            dataType: tableau.dataTypeEnum.int
+        }, {
+            id: "Mileage",
+            alias: "Car Mileage",
+            dataType: tableau.dataTypeEnum.int
+        }, {
+            id: "Transmission",
+            alias: "Car Transmission",
+            dataType: tableau.dataTypeEnum.string
+        }, {
+            id: "EstimatedPrice",
+            alias: "Predicted Price ($)",
+            dataType: tableau.dataTypeEnum.float
+        }];
+
+        var tableSchema = {
+            id: "carPricePrediction",
+            alias: "Car Price Prediction Data",
+            columns: cols
+        };
+
+        schemaCallback([tableSchema]);
+    };
+
+    myConnector.getData = function(table, doneCallback) {
+        var url = "http://127.0.0.1:5000/predict";
+        
+        var data = {
+            "Brand": "Toyota",
+            "Year": 2015,
+            "Mileage": 60000,
+            "Transmission": "Automatic"
+        };
+
+        $.ajax({
+            url: url,
+            type: "POST",
+            data: JSON.stringify(data),
+            contentType: "application/json",
+            success: function(resp) {
+                var tableData = [{
+                    "Brand": data.Brand,
+                    "Year": data.Year,
+                    "Mileage": data.Mileage,
+                    "Transmission": data.Transmission,
+                    "EstimatedPrice": resp["Estimated Price"]
+                }];
+                table.appendRows(tableData);
+                doneCallback();
+            }
+        });
+    };
+
+    tableau.registerConnector(myConnector);
+
+    $(document).ready(function() {
+        $("#submitButton").click(function() {
+            tableau.connectionName = "Car Price Prediction API";
+            tableau.submit();
+        });
+    });
+})();
